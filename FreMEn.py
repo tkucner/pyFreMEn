@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 
 
 class FreMen:
@@ -18,21 +19,26 @@ class FreMen:
         self.gain = 0
         self.points_count = 0
 
-        self.times = np.array([])
-        self.states = np.array([])
+        self.time_series = pd.DataFrame()
 
-    def add_observations(self, times, states):
-        self.times = np.array(times if self.times.size == 0 else np.append(self.times, times))
-        self.states = np.array(states if self.states.size == 0 else np.append(self.states, states))
+    def add_observations(self, **kwargs):
+        if 'time_series' in kwargs:
+            self.time_series=self.time_series.append(kwargs['time_series'], ignore_index=True)
+        elif 'times' or 'states' in kwargs:
+            assert kwargs['times'].shape() == kwargs['states'].shape()
+            local_df = pd.DataFrame({'times': kwargs['times'], "states": kwargs['states']})
+            self.time_series=self.time_series.append(local_df)
 
     def update(self):
-        self.gain = (self.gain * self.points_count + np.sum(self.states)) / (self.points_count + self.states.size)
-        self.points_count = self.points_count + self.states.size
-        for state, time in zip(self.states, self.times):
+        self.gain = (self.gain * self.points_count + self.time_series['states'].sum()) / (
+                    self.points_count + len(self.time_series.index))
+        self.points_count = self.points_count + len(self.time_series.index)
+        for index, row in self.time_series.iterrows():
+            # for state, time in zip(self.states, self.times):
             for periodicies_id, period in enumerate(self.periodicies):
-                angle = 2 * np.pi * time / period
-                self.realStates[periodicies_id] = self.realStates[periodicies_id] + state * np.cos(angle)
-                self.imagStates[periodicies_id] = self.imagStates[periodicies_id] + state * np.sin(angle)
+                angle = 2 * np.pi * row['times'] / period
+                self.realStates[periodicies_id] = self.realStates[periodicies_id] + row['states'] * np.cos(angle)
+                self.imagStates[periodicies_id] = self.imagStates[periodicies_id] + row['states'] * np.sin(angle)
                 self.realBalance[periodicies_id] = self.realBalance[periodicies_id] + self.gain * np.cos(angle)
                 self.imagBalance[periodicies_id] = self.imagBalance[periodicies_id] + self.gain * np.sin(angle)
 
@@ -40,7 +46,6 @@ class FreMen:
         order = (kwargs["order"] if "order" in kwargs else 100)
         reconstruction_time = (
             kwargs["reconstruction_time"] if "reconstruction_time" in kwargs else range(0, 601200, 3600))
-
         amplitude = np.zeros(self.number_of_periodicities)
         phase = np.zeros(self.number_of_periodicities)
         for periodicies_id, (res, reb, ims, imb) in enumerate(
@@ -62,4 +67,4 @@ class FreMen:
                 p[rt_id] = 1.0
             if p[rt_id] < 0:
                 p[rt_id] = 0.0
-        return p,reconstruction_time
+        return p, reconstruction_time

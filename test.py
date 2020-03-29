@@ -1,6 +1,6 @@
 import FreMEn as fr
 import FreMEnVis as fr_vis
-
+import pandas as pd
 times = [0, 3600, 7200, 10800, 14400, 18000, 21600, 25200, 28800, 32400, 36000, 39600, 43200, 46800, 50400, 54000,
          57600, 61200, 64800, 68400, 72000, 75600, 79200, 82800, 86400, 90000, 93600, 97200, 100800, 104400, 108000,
          111600, 115200, 118800, 122400, 126000, 129600, 133200, 136800, 140400, 144000, 147600, 151200, 154800, 158400,
@@ -19,8 +19,10 @@ states = [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0
           1, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
           0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 
+data={'times':times,'states':states}
+df = pd.DataFrame(data)
 FR=fr.FreMen()
-FR.add_observations(times,states)
+FR.add_observations(time_series=df)
 FR.update()
 p,reconstruction_time=FR.reconstruct()
 fr_vis.show(times=times,states=states,probabilities=p,reconstruction_times=reconstruction_time)
